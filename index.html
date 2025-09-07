@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>London Bike Analysis Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f4f0;
+            color: #3f4551;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (min-width: 768px) {
+            .grid-cols-1 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .grid-cols-1 > div {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body class="bg-[#f7f4f0] text-[#3f4551] p-4 md:p-8">
+
+    <!-- Main Content Container -->
+    <div class="max-w-7xl mx-auto">
+        <!-- Header Section -->
+        <header class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-[#3f4551] mb-2">London Bike Rental Analysis</h1>
+            <p class="text-xl text-gray-600">Interactive dashboard of over 5 million bike rentals</p>
+        </header>
+
+        <!-- Main Dashboard Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Sidebar/Filters -->
+            <aside class="md:col-span-1 p-6 bg-white rounded-lg shadow-md h-fit sticky top-8">
+                <h2 class="text-2xl font-semibold mb-4">Dashboard Filters</h2>
+                <div class="mb-4">
+                    <label for="chart-selector" class="block text-sm font-medium text-gray-700">Select Data View:</label>
+                    <select id="chart-selector" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#3f4551] focus:border-[#3f4551] sm:text-sm rounded-md shadow-sm">
+                        <option value="stations">Top 10 Busiest Stations</option>
+                        <option value="routes">Top 10 Most Popular Routes</option>
+                    </select>
+                </div>
+            </aside>
+
+            <!-- Main Content Area (Charts and Text) -->
+            <main class="md:col-span-2">
+                <div class="p-6 bg-white rounded-lg shadow-md mb-8">
+                    <h2 id="chart-title" class="text-2xl font-semibold mb-4">Top 10 Busiest Starting Stations</h2>
+                    <p id="chart-description" class="text-gray-600 mb-6">
+                        Based on an analysis of over 5 million bike rentals, the busiest stations are overwhelmingly concentrated in and around Hyde Park and major transportation hubs.
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="main-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-white rounded-lg shadow-md">
+                    <h2 class="text-2xl font-semibold mb-4">Methodology</h2>
+                    <p class="text-gray-600 mb-4">
+                        This project was completed using the following tools and methods to perform exploratory data analysis and generate insights.
+                    </p>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li>**Data Source:** Used the `bigquery-public-data.london_bicycles.cycle_hire` dataset from Google BigQuery.</li>
+                        <li>**Analysis:** All data was analyzed using **SQL** to extract and aggregate the necessary information.</li>
+                        <li>**Tools:** SQL, Google BigQuery, Chart.js, HTML, and Tailwind CSS.</li>
+                    </ul>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- JavaScript for Interactivity -->
+    <script>
+        const data = {
+            stations: {
+                labels: ['Hyde Park Corner, Hyde Park', 'Waterloo Station 3, Waterloo', 'River Street , Clerkenwell', 'South Kensington Station, South Kensington', 'Black Lion Gate, Kensington Gardens', 'Wellington Arch, Hyde Park', 'Park Lane, Hyde Park', 'Tavistock Street, Covent Garden', 'Clerkenwell Road, Clerkenwell', 'Knightsbridge, Hyde Park'],
+                data: [59365, 43712, 43673, 40315, 39686, 38928, 38167, 36873, 35985, 34509],
+                description: 'Based on an analysis of over 5 million bike rentals, the busiest stations are overwhelmingly concentrated in and around Hyde Park and major transportation hubs. This suggests that bike rentals are primarily used for recreational purposes or as a "last-mile" commuting solution.'
+            },
+            routes: {
+                labels: ['Hyde Park Corner, Hyde Park to Hyde Park Corner, Hyde Park', 'Waterloo Station 3, Waterloo to Waterloo Station 3, Waterloo', 'Aquatic Centre, Queen Elizabeth Olympic Park to Aquatic Centre, Queen Elizabeth Olympic Park', 'Black Lion Gate, Kensington Gardens to Black Lion Gate, Kensington Gardens', 'Triangle Car Park, Hyde Park to Triangle Car Park, Hyde Park', 'Park Lane, Hyde Park to Park Lane, Hyde Park', 'Podium, Queen Elizabeth Olympic Park to Podium, Queen Elizabeth Olympic Park', 'Wellington Arch, Hyde Park to Wellington Arch, Hyde Park', 'Hyde Park Corner, Hyde Park to Albert Gate, Hyde Park', 'Albert Gate, Hyde Park to Albert Gate, Hyde Park'],
+                data: [161295, 131026, 88573, 85290, 70808, 61688, 45160, 41562, 36676, 33333],
+                description: 'The most popular routes were all located within a small radius, confirming that bikes are often used for short trips rather than long-distance commuting. The fact that a large number of rides start and end at the same station suggests recreational use.'
+            }
+        };
+
+        const ctx = document.getElementById('main-chart').getContext('2d');
+        const chartSelector = document.getElementById('chart-selector');
+        const chartTitle = document.getElementById('chart-title');
+        const chartDescription = document.getElementById('chart-description');
+
+        const formatLabel = (label) => {
+            const maxChars = 16;
+            const words = label.split(' ');
+            let lines = [];
+            let currentLine = '';
+
+            words.forEach(word => {
+                if ((currentLine + ' ' + word).length <= maxChars || currentLine.length === 0) {
+                    currentLine += (currentLine.length > 0 ? ' ' : '') + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            });
+            lines.push(currentLine);
+            return lines;
+        };
+
+        const createChart = (chartData, chartLabels) => {
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels.map(label => formatLabel(label)),
+                    datasets: [{
+                        label: 'Number of Rides',
+                        data: chartData,
+                        backgroundColor: '#5a7d9a',
+                        borderColor: '#3f4551',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (tooltipItems) => {
+                                    const fullLabel = tooltipItems[0].label.replace(/,/g, '');
+                                    return fullLabel.replace(/\n/g, ' ');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Rides'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Station Name'
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        let myChart = createChart(data.stations.data, data.stations.labels);
+
+        chartSelector.addEventListener('change', (e) => {
+            const selected = e.target.value;
+            myChart.destroy();
+            if (selected === 'stations') {
+                myChart = createChart(data.stations.data, data.stations.labels);
+                chartTitle.textContent = 'Top 10 Busiest Starting Stations';
+                chartDescription.textContent = data.stations.description;
+            } else if (selected === 'routes') {
+                myChart = createChart(data.routes.data, data.routes.labels);
+                chartTitle.textContent = 'Top 10 Most Popular Routes';
+                chartDescription.textContent = data.routes.description;
+            }
+        });
+    </script>
+</body>
+</html>
