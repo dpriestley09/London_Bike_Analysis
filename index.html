@@ -3,184 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>London Bike Analysis Dashboard</title>
+    <title>London Bike Rental Analysis</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f4f0;
-            color: #3f4551;
-        }
-        .chart-container {
-            position: relative;
-            height: 400px;
-            width: 100%;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        @media (min-width: 768px) {
-            .grid-cols-1 {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-            .grid-cols-1 > div {
-                grid-column: span 1;
-            }
+        .map-container {
+            height: 60vh;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
     </style>
 </head>
-<body class="bg-[#f7f4f0] text-[#3f4551] p-4 md:p-8">
-
-    <!-- Main Content Container -->
+<body class="bg-gray-100 text-gray-800 p-8">
     <div class="max-w-7xl mx-auto">
-        <!-- Header Section -->
-        <header class="text-center mb-12">
-            <h1 class="text-5xl font-bold text-[#3f4551] mb-2">London Bike Rental Analysis</h1>
-            <p class="text-xl text-gray-600">Interactive dashboard of over 5 million bike rentals</p>
-        </header>
+        <h1 class="text-4xl font-bold text-center mb-2">London Bike Rental Analysis</h1>
+        <p class="text-center text-gray-600 mb-8">An interactive dashboard to explore key usage patterns and popular stations.</p>
 
-        <!-- Main Dashboard Layout -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- Sidebar/Filters -->
-            <aside class="md:col-span-1 p-6 bg-white rounded-lg shadow-md h-fit sticky top-8">
-                <h2 class="text-2xl font-semibold mb-4">Dashboard Filters</h2>
-                <div class="mb-4">
-                    <label for="chart-selector" class="block text-sm font-medium text-gray-700">Select Data View:</label>
-                    <select id="chart-selector" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#3f4551] focus:border-[#3f4551] sm:text-sm rounded-md shadow-sm">
-                        <option value="stations">Top 10 Busiest Stations</option>
-                        <option value="routes">Top 10 Most Popular Routes</option>
-                    </select>
+        <!-- Filters -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Filters</h2>
+            <div class="flex flex-col md:flex-row gap-4 items-center">
+                <div class="flex-grow">
+                    <label class="block text-sm font-medium text-gray-700">Bike ID:</label>
+                    <input type="text" id="bikeIdInput" class="mt-1 w-full p-2 border border-gray-300 rounded-lg" placeholder="Enter Bike ID (e.g., 10000)">
                 </div>
-            </aside>
+                <button onclick="filterByBikeId()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200">Filter</button>
+                <button onclick="resetFilters()" class="bg-gray-400 text-white px-6 py-2 rounded-lg hover:bg-gray-500 transition duration-200">Reset</button>
+            </div>
+        </div>
 
-            <!-- Main Content Area (Charts and Text) -->
-            <main class="md:col-span-2">
-                <div class="p-6 bg-white rounded-lg shadow-md mb-8">
-                    <h2 id="chart-title" class="text-2xl font-semibold mb-4">Top 10 Busiest Starting Stations</h2>
-                    <p id="chart-description" class="text-gray-600 mb-6">
-                        Based on an analysis of over 5 million bike rentals, the busiest stations are overwhelmingly concentrated in and around Hyde Park and major transportation hubs.
-                    </p>
-                    <div class="chart-container">
-                        <canvas id="main-chart"></canvas>
-                    </div>
-                </div>
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                <p class="text-sm font-semibold text-gray-500">Total Trips</p>
+                <p id="totalTrips" class="text-3xl font-bold mt-1"></p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                <p class="text-sm font-semibold text-gray-500">Avg Trip Duration (min)</p>
+                <p id="avgDuration" class="text-3xl font-bold mt-1"></p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                <p class="text-sm font-semibold text-gray-500">Unique Bikes</p>
+                <p id="uniqueBikes" class="text-3xl font-bold mt-1"></p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                <p class="text-sm font-semibold text-gray-500">Unique Stations</p>
+                <p id="uniqueStations" class="text-3xl font-bold mt-1"></p>
+            </div>
+        </div>
 
-                <div class="p-6 bg-white rounded-lg shadow-md">
-                    <h2 class="text-2xl font-semibold mb-4">Methodology</h2>
-                    <p class="text-gray-600 mb-4">
-                        This project was completed using the following tools and methods to perform exploratory data analysis and generate insights.
-                    </p>
-                    <ul class="list-disc list-inside space-y-2 text-gray-700">
-                        <li>**Data Source:** Used the `bigquery-public-data.london_bicycles.cycle_hire` dataset from Google BigQuery.</li>
-                        <li>**Analysis:** All data was analyzed using **SQL** to extract and aggregate the necessary information.</li>
-                        <li>**Tools:** SQL, Google BigQuery, Chart.js, HTML, and Tailwind CSS.</li>
-                    </ul>
+        <!-- Map and Charts -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-2xl font-semibold mb-4">Bike Trip Map</h2>
+                <div id="map" class="map-container"></div>
+            </div>
+            <div class="grid grid-cols-1 gap-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-semibold mb-4">Trips by Hour of Day</h2>
+                    <canvas id="tripsByHourChart" class="w-full h-full"></canvas>
                 </div>
-            </main>
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-semibold mb-4">Top 5 Starting Stations</h2>
+                    <canvas id="topStationsChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- JavaScript for Interactivity -->
     <script>
-        const data = {
-            stations: {
-                labels: ['Hyde Park Corner, Hyde Park', 'Waterloo Station 3, Waterloo', 'River Street , Clerkenwell', 'South Kensington Station, South Kensington', 'Black Lion Gate, Kensington Gardens', 'Wellington Arch, Hyde Park', 'Park Lane, Hyde Park', 'Tavistock Street, Covent Garden', 'Clerkenwell Road, Clerkenwell', 'Knightsbridge, Hyde Park'],
-                data: [59365, 43712, 43673, 40315, 39686, 38928, 38167, 36873, 35985, 34509],
-                description: 'Based on an analysis of over 5 million bike rentals, the busiest stations are overwhelmingly concentrated in and around Hyde Park and major transportation hubs. This suggests that bike rentals are primarily used for recreational purposes or as a "last-mile" commuting solution.'
-            },
-            routes: {
-                labels: ['Hyde Park Corner, Hyde Park to Hyde Park Corner, Hyde Park', 'Waterloo Station 3, Waterloo to Waterloo Station 3, Waterloo', 'Aquatic Centre, Queen Elizabeth Olympic Park to Aquatic Centre, Queen Elizabeth Olympic Park', 'Black Lion Gate, Kensington Gardens to Black Lion Gate, Kensington Gardens', 'Triangle Car Park, Hyde Park to Triangle Car Park, Hyde Park', 'Park Lane, Hyde Park to Park Lane, Hyde Park', 'Podium, Queen Elizabeth Olympic Park to Podium, Queen Elizabeth Olympic Park', 'Wellington Arch, Hyde Park to Wellington Arch, Hyde Park', 'Hyde Park Corner, Hyde Park to Albert Gate, Hyde Park', 'Albert Gate, Hyde Park to Albert Gate, Hyde Park'],
-                data: [161295, 131026, 88573, 85290, 70808, 61688, 45160, 41562, 36676, 33333],
-                description: 'The most popular routes were all located within a small radius, confirming that bikes are often used for short trips rather than long-distance commuting. The fact that a large number of rides start and end at the same station suggests recreational use.'
-            }
-        };
+        const bikeData = [
+            {"bike_id":10000,"start_station_name":"Hyde Park Corner","start_station_latitude":51.503463,"start_station_longitude":-0.151877,"end_station_name":"Westminster","end_station_latitude":51.499696,"end_station_longitude":-0.124619,"duration":15},
+            {"bike_id":10001,"start_station_name":"Covent Garden","start_station_latitude":51.5144,"start_station_longitude":-0.1232,"end_station_name":"Hyde Park Corner","end_station_latitude":51.503463,"end_station_longitude":-0.151877,"duration":25},
+            {"bike_id":10002,"start_station_name":"Westminster","start_station_latitude":51.499696,"start_station_longitude":-0.124619,"end_station_name":"Hyde Park Corner","end_station_latitude":51.503463,"end_station_longitude":-0.151877,"duration":10},
+            {"bike_id":10003,"start_station_name":"Hyde Park Corner","start_station_latitude":51.503463,"start_station_longitude":-0.151877,"end_station_name":"Covent Garden","end_station_latitude":51.5144,"end_station_longitude":-0.1232,"duration":20},
+            {"bike_id":10004,"start_station_name":"Covent Garden","start_station_latitude":51.5144,"start_station_longitude":-0.1232,"end_station_name":"Westminster","end_station_latitude":51.499696,"end_station_longitude":-0.124619,"duration":30},
+            {"bike_id":10005,"start_station_name":"Westminster","start_station_latitude":51.499696,"start_station_longitude":-0.124619,"end_station_name":"Hyde Park Corner","end_station_latitude":51.503463,"end_station_longitude":-0.151877,"duration":12},
+            {"bike_id":10006,"start_station_name":"Hyde Park Corner","start_station_latitude":51.503463,"start_station_longitude":-0.151877,"end_station_name":"Westminster","end_station_latitude":51.499696,"end_station_longitude":-0.124619,"duration":18},
+            {"bike_id":10007,"start_station_name":"Covent Garden","start_station_latitude":51.5144,"start_station_longitude":-0.1232,"end_station_name":"Hyde Park Corner","end_station_latitude":51.503463,"end_station_longitude":-0.151877,"duration":22},
+            {"bike_id":10008,"start_station_name":"Hyde Park Corner","start_station_latitude":51.503463,"start_station_longitude":-0.151877,"end_station_name":"Westminster","end_station_latitude":51.499696,"end_station_longitude":-0.124619,"duration":14},
+            {"bike_id":10009,"start_station_name":"Westminster","start_station_latitude":51.499696,"start_station_longitude":-0.124619,"end_station_name":"Hyde Park Corner","end_station_latitude":51.503463,"end_station_longitude":-0.151877,"duration":16}
+        ];
 
-        const ctx = document.getElementById('main-chart').getContext('2d');
-        const chartSelector = document.getElementById('chart-selector');
-        const chartTitle = document.getElementById('chart-title');
-        const chartDescription = document.getElementById('chart-description');
+        let map, bikeMarkers = L.featureGroup();
+        let tripsByHourChart, topStationsChart;
 
-        const formatLabel = (label) => {
-            const maxChars = 16;
-            const words = label.split(' ');
-            let lines = [];
-            let currentLine = '';
+        function initializeMap() {
+            map = L.map('map').setView([51.505, -0.1], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+        }
 
-            words.forEach(word => {
-                if ((currentLine + ' ' + word).length <= maxChars || currentLine.length === 0) {
-                    currentLine += (currentLine.length > 0 ? ' ' : '') + word;
-                } else {
-                    lines.push(currentLine);
-                    currentLine = word;
-                }
+        function updateMapMarkers(data) {
+            bikeMarkers.clearLayers();
+            data.forEach(trip => {
+                L.marker([trip.start_station_latitude, trip.start_station_longitude])
+                    .bindPopup(`Bike ID: ${trip.bike_id}<br>Start: ${trip.start_station_name}<br>Duration: ${trip.duration} mins`)
+                    .addTo(bikeMarkers);
+                L.marker([trip.end_station_latitude, trip.end_station_longitude])
+                    .bindPopup(`Bike ID: ${trip.bike_id}<br>End: ${trip.end_station_name}<br>Duration: ${trip.duration} mins`)
+                    .addTo(bikeMarkers);
             });
-            lines.push(currentLine);
-            return lines;
-        };
+            bikeMarkers.addTo(map);
+            if (data.length > 0) {
+                map.fitBounds(bikeMarkers.getBounds());
+            }
+        }
 
-        const createChart = (chartData, chartLabels) => {
-            return new Chart(ctx, {
+        function updateDashboard(data) {
+            // Metrics
+            document.getElementById('totalTrips').textContent = data.length;
+            const totalDuration = data.reduce((sum, trip) => sum + trip.duration, 0);
+            document.getElementById('avgDuration').textContent = data.length > 0 ? (totalDuration / data.length).toFixed(1) : 0;
+            document.getElementById('uniqueBikes').textContent = new Set(data.map(trip => trip.bike_id)).size;
+            document.getElementById('uniqueStations').textContent = new Set(data.flatMap(trip => [trip.start_station_name, trip.end_station_name])).size;
+
+            // Map
+            updateMapMarkers(data);
+
+            // Charts
+            const tripsByHour = data.reduce((acc, trip) => {
+                const hour = new Date().getHours(); // Static hour for demo
+                acc[hour] = (acc[hour] || 0) + 1;
+                return acc;
+            }, {});
+
+            const topStations = data.reduce((acc, trip) => {
+                acc[trip.start_station_name] = (acc[trip.start_station_name] || 0) + 1;
+                return acc;
+            }, {});
+            const sortedStations = Object.entries(topStations).sort(([,a],[,b]) => b-a).slice(0, 5);
+            const stationLabels = sortedStations.map(s => s[0]);
+            const stationData = sortedStations.map(s => s[1]);
+
+            // Trips by Hour Chart
+            if (tripsByHourChart) tripsByHourChart.destroy();
+            tripsByHourChart = new Chart(document.getElementById('tripsByHourChart').getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: chartLabels.map(label => formatLabel(label)),
+                    labels: [new Date().getHours()], // Static label for demo
                     datasets: [{
-                        label: 'Number of Rides',
-                        data: chartData,
-                        backgroundColor: '#5a7d9a',
-                        borderColor: '#3f4551',
-                        borderWidth: 1
+                        label: 'Trips',
+                        data: Object.values(tripsByHour),
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                title: (tooltipItems) => {
-                                    const fullLabel = tooltipItems[0].label.replace(/,/g, '');
-                                    return fullLabel.replace(/\n/g, ' ');
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Number of Rides'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Station Name'
-                            }
-                        }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false }
             });
-        };
 
-        let myChart = createChart(data.stations.data, data.stations.labels);
+            // Top Stations Chart
+            if (topStationsChart) topStationsChart.destroy();
+            topStationsChart = new Chart(document.getElementById('topStationsChart').getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: stationLabels,
+                    datasets: [{
+                        label: 'Trips',
+                        data: stationData,
+                        backgroundColor: ['#4299E1', '#667EEA', '#9F7AEA', '#D53F8C', '#F687B3'],
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
 
-        chartSelector.addEventListener('change', (e) => {
-            const selected = e.target.value;
-            myChart.destroy();
-            if (selected === 'stations') {
-                myChart = createChart(data.stations.data, data.stations.labels);
-                chartTitle.textContent = 'Top 10 Busiest Starting Stations';
-                chartDescription.textContent = data.stations.description;
-            } else if (selected === 'routes') {
-                myChart = createChart(data.routes.data, data.routes.labels);
-                chartTitle.textContent = 'Top 10 Most Popular Routes';
-                chartDescription.textContent = data.routes.description;
+        function filterByBikeId() {
+            const bikeId = parseInt(document.getElementById('bikeIdInput').value);
+            if (!isNaN(bikeId)) {
+                const filteredData = bikeData.filter(trip => trip.bike_id === bikeId);
+                updateDashboard(filteredData);
             }
+        }
+
+        function resetFilters() {
+            document.getElementById('bikeIdInput').value = '';
+            updateDashboard(bikeData);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeMap();
+            updateDashboard(bikeData);
         });
     </script>
 </body>
