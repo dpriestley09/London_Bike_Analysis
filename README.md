@@ -42,4 +42,4 @@ This project provides an in-depth analysis of London's bike-sharing program. Usi
 
 ### Live Dashboard
 
-[**Click here to view the live, interactive dashboard**](https://cazrooney.github.io/LondonBikeAnalysis/)
+[**Click here to view the live, interactive dashboard**](https://dpriestley09.github.io/London_Bike_Analysis/)
