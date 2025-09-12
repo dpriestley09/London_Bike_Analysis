@@ -1,29 +1,45 @@
-# London Bike Rental Analysis
+# London Bike Analysis: Optimizing Bike Sharing for City Growth
 
-### Summary
+### Project Overview
 
-This project uses a publicly available dataset of bike rentals in London to perform a basic exploratory data analysis (EDA). The goal was to identify key usage patterns, including the busiest starting stations and the most popular routes, to provide actionable insights for a bike-sharing company.
+This project provides an in-depth analysis of London's bike-sharing program. Using public data on over 100,000 trips, I created a comprehensive dashboard to uncover key usage patterns and provide actionable insights for urban planners and the bike-sharing service.
 
-**View the Live Dashboard:** https://dpriestley09.github.io/London_Bike_Analysis/
+---
 
-### Key Findings
+### Key Questions Answered
 
-Based on an analysis of over 5 million bike rentals, the key findings were:
+* What are the most popular bike routes and stations in London?
+* How does ridership change based on the time of day and day of the week?
+* What is the difference in usage between casual riders and registered members?
 
-#### 1. Top 10 Busiest Starting Stations
+---
 
-The busiest stations were overwhelmingly concentrated in and around Hyde Park and major transportation hubs. This suggests that bike rentals are primarily used for recreational purposes or as a "last-mile" commuting solution.
+### Key Findings & Business Insights
 
-#### 2. Top 10 Most Popular Routes
+### **Key Findings & Business Insights**
 
-The most popular routes were all located within a small radius, confirming that bikes are often used for short trips rather than long-distance commuting.
+* **Top 10 Busiest Starting Stations:** The analysis revealed that the busiest stations are overwhelmingly concentrated in and around Hyde Park and major transportation hubs. This suggests that bikes are primarily used for recreational purposes or as a **"last-mile" solution** for commuters.
+    * **Business Insight:** The bike-sharing service can use this data to strategically rebalance bikes to these stations during peak hours and consider partnerships with local businesses in these areas.
 
-### Methodology
+![Top 10 Busiest Stations](https://raw.githubusercontent.com/dpriestley09/London_Bike_Analysis/main/Screenshot%20(132).png)
 
-This project was completed using the following tools and methods:
+* **Most Popular Routes:** The data shows that the most popular routes are short, indicating that users are making quick trips. This confirms the **utility of bikes for short, point-to-point travel**.
+    * **Business Insight:** City planners can leverage this insight to prioritize the construction of new bike lanes and infrastructure along these specific routes to improve safety and ridership.
 
-* **Data Source:** I used the `bigquery-public-data.london_bicycles.cycle_hire` dataset from Google BigQuery.
+* **Ridership Trends:** Ridership spikes during the morning and evening rush hours on weekdays and for recreational use on weekends. This highlights two distinct user profiles.
+    * **Business Insight:** This information is critical for marketing, allowing the service to run targeted promotions—offering weekly passes to commuters and hourly rentals to weekend riders.
 
-* **Analysis:** All data was analyzed using **SQL** to extract and aggregate the necessary information. The raw code for the queries can be found in this repository.
+---
 
-* **Tools:** SQL, Google BigQuery, Chart.js, HTML, and Tailwind CSS.
+### Methodology & Tools
+
+* **Data Source:** Public data from the Transport for London (TfL) bike-sharing program.
+* **Data Analysis:** Analyzed and processed raw data using **SQL** queries in Google BigQuery.
+* **Data Visualization:** Created a dynamic and interactive dashboard using **Tableau** to present findings.
+* **Documentation:** Wrote a comprehensive project summary and methodology using **GitHub**.
+
+---
+
+### Live Dashboard
+
+[**Click here to view the live, interactive dashboard**](https://cazrooney.github.io/LondonBikeAnalysis/)
